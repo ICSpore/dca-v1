@@ -18,6 +18,11 @@ const PositionHistory: React.FC<PositionHistoryProps> = ({
     purchasesLeft,
     nextRunTime,
 }) => {
+
+    const castBtc = (amount: string) => {
+        return Number(amount) / 1_00_000_000;
+    }
+
     const parsePurchaseHistory = (item: Position) => {
         if (!item.purchaseHistory || item.purchaseHistory.length === 0 || !item.purchaseHistory[0]) {
             return <div>No purchase history available now</div>;
@@ -27,7 +32,7 @@ const PositionHistory: React.FC<PositionHistoryProps> = ({
             if ("ok" in entry) {
                 return (
                     <li key={index} className="position-history__item">
-                        <span className="position-history__item_success">Success: {entry.ok}</span>
+                        <span className="position-history__item_success">Success: {castBtc(entry.ok)} ckBTC</span>
                     </li>
                 );
             } else if ("err" in entry) {

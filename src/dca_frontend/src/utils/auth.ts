@@ -39,7 +39,6 @@ export const handleInternetIdentityAuth = async (): Promise<AuthClient | void> =
                 identityProvider: getIdentityProvider(),
                 onSuccess: async () => {
                     const newIdentity = await authClient.getIdentity();
-                    console.log("Identity refreshed");
                     // Update any agents or objects associated with the new identity
                 },
             });
