@@ -1,8 +1,16 @@
 # ICSpore DCA protocol
 
 ## Description:
-
 With this project you can create an executable DCA financial strategy in IC (Internet Computer) ecosystem.
+
+
+## Features:
+- Create and manage automated token purchase strategy.
+- Frontend 100% onchain
+- Automation 100% onchin without 3'th party services
+- Avaliable to interact from web Applications.
+- Avaliable to interact from dfx SDK.
+- 0% Fee
 
 
 ## Workflow schema
@@ -10,18 +18,15 @@ With this project you can create an executable DCA financial strategy in IC (Int
 
 
 ## Limitations:
-
 * Token for sell - ICP
 * Token to buy - ckBTC 
 
 
 ## Prerequisites:
-
 * Some [ICP coin](https://coinmarketcap.com/currencies/internet-computer/) on your Principal-id  
 
 
 ## Mainnet interactions
-
 | Canister type | Canister id | Stage |
 |---------------|-------------|-------|
 | DCA backend   | up2ak-nqaaa-aaaap-qccia-cai | Open beta |
