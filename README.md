@@ -5,12 +5,12 @@ With this project you can create an executable DCA financial strategy in IC (Int
 
 
 ## Features:
-- Create and manage automated token purchase strategy.
-- Frontend 100% onchain
-- Automation 100% onchin without 3'th party services
-- Avaliable to interact from web Applications.
-- Avaliable to interact from dfx SDK.
-- 0% Fee
+- Create and manage automated token purchase strategies.
+- 100% on-chain frontend.
+- 100% on-chain automation without third-party services.
+- Accessible via web applications.
+- Accessible via the DFX SDK.
+- 0% fees.
 
 
 ## Workflow schema
