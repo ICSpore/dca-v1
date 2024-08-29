@@ -1,29 +1,31 @@
-# Yoki DCA canister
+# ICSpore DCA protocol
 
 ## Description:
 
-With this project you can create an executable DCA financial strategy in ICP (Internet Computer Protocol) ecosystem.
+With this project you can create an executable DCA financial strategy in IC (Internet Computer) ecosystem.
+
+
+## Workflow schema
+![DCA_Schema](https://salmon-bitter-gull-231.mypinata.cloud/ipfs/QmaUQsLC6XmLfnRxXUmGUv924u3T511BJmGBy5NWYpMzRe)
 
 
 ## Limitations:
-- Currently supports only direct canister interactions without front-end
-- Token for sell - ICP
-- Token to buy - ckBTC 
+
+* Token for sell - ICP
+* Token to buy - ckBTC 
 
 
 ## Prerequisites:
 
-* Installed [dfx SDK](https://internetcomputer.org/docs/current/developer-docs/getting-started/install#installing-dfx-via-dfxvm) to interact with ICP blockchain from CLI
-* Some [ICP coin](https://coinmarketcap.com/currencies/internet-computer/) on your principal-id  
-
+* Some [ICP coin](https://coinmarketcap.com/currencies/internet-computer/) on your Principal-id  
 
 
 ## Mainnet interactions
 
-
 | Canister type | Canister id | Stage |
 |---------------|-------------|-------|
-| DCA backend   | up2ak-nqaaa-aaaap-qccia-cai | Mainnet |
+| DCA backend   | up2ak-nqaaa-aaaap-qccia-cai | Open beta |
+| DCA frontend   | qnoqa-vaaaa-aaaap-qhima-cai | Open beta |
 
 
 ### Step 1. Set Approve to DCA canister
@@ -94,11 +96,23 @@ Change the **hfugy-ahqdz-5sbki-vky4l-xceci-3se5z-2cb7k-jxjuq-qidax-gd53f-nqe** t
 dfx canister call dca_backend openPosition '(record { tokenToSell = principal "ryjl3-tyaaa-aaaaa-aaaba-cai"; tokenToBuy = principal "mxzaz-hqaaa-aaaar-qaada-cai"; beneficiary = principal "hfugy-ahqdz-5sbki-vky4l-xceci-3se5z-2cb7k-jxjuq-qidax-gd53f-nqe"; amountToSell = 30_000; frequency = variant {Daily} })'
 ```
 
+## Roadmap
+Our achievements and future goals.
+
+- [x] DCA canister can serve to create/edit user Positions
+- [x] ICPSwap swap pool integrated 
+- [x] Onchain automation for purchases 
+- [x] Frontend canister integrated
+- [x] Internet Identity integrated
+- [ ] Plug wallet integrated
+- [ ] ckUSDT, ckUSDC, ckETH, CHAT integrated 
+- [ ] Aggregator router integrated
+
+## License
+This project is licensed under the MIT license, see LICENSE.md for details.
 
 ## Status: Beta Version
-
 This project is in the beta testing phase. We are actively working on adding new features and improving existing ones. Please be cautious as the software may contain bugs, and its stability is not guaranteed.
 
 ## Disclaimer
-
 By using this project, you agree to do so at your own risk. The authors of the project are not responsible for any potential consequences of using this software.
