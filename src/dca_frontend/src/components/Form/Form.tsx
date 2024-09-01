@@ -13,6 +13,7 @@ import ckUSDTIcon from "../../images/ckUSDT.svg";
 import ckBTCIcon from "../../images/ckBTC.svg";
 import ckETHIcon from "../../images/ckETH.svg";
 import CHATIcon from "../../images/spinner.svg";
+import { Position } from "../../../declarations/dca_backend/dca_backend.did";
 
 interface FormProps {
     isWalletConnected: boolean;

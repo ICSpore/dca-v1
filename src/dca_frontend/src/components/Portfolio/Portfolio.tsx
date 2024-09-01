@@ -63,7 +63,9 @@ const Portfolio: React.FC<PortfolioProps> = ({ onDetailsClick }) => {
                 const result = await actorBackend.closePosition(indexBigInt);
 
                 if (result.ok) {
-                    setPosition((prevPositions) => prevPositions.filter((_, index) => index !== selectedItem));
+                    setPosition((prevPositions: Position[]) =>
+                        prevPositions.filter((_, index) => index !== selectedItem)
+                    );
                 } else {
                     console.error("Error closing position:", result.err);
                 }

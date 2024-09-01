@@ -100,7 +100,6 @@ const FormSubtotal: React.FC<FormSubtotalProps> = ({
                 </li>
             </ul>
 
-            {/* <li className="form-subtotal__element form-subtotal__element_total"> */}
             <div className="form-subtotal__result">
                 <div className="form-subtotal__element-sub-container form-subtotal__element-sub-container_total-purchases">
                     <span className="form-subtotal__element-description">Number of purchases:</span>
@@ -126,7 +125,6 @@ const FormSubtotal: React.FC<FormSubtotalProps> = ({
                     <span className="form-subtotal__element-warning">According to {formattedTodayDate} rate</span>
                 </div>
             </div>
-            {/* </li> */}
         </div>
     );
 };

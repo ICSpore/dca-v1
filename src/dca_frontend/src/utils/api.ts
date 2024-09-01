@@ -1,3 +1,15 @@
-import { idlFactory } from "../../declarations/dca_backend/dca_backend.did.js";
+import { useAuth } from "../context/AuthContext";
 
-//openPosition
+const { actorBackend } = useAuth();
+
+export const getAllPosition = async () => {
+    try {
+        const pos = await actorBackend.getAllPositions();
+        if (pos.ok) {
+            return pos.ok;
+        }
+    } catch (error) {
+        console.warn("Error fetching positions:", error);
+        return undefined;
+    }
+};

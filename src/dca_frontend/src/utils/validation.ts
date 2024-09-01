@@ -1,5 +1,3 @@
-// src/validation.ts
-
 import { useState, useEffect } from "react";
 
 export interface FormErrors {

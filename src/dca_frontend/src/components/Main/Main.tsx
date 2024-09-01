@@ -3,12 +3,12 @@ import "./Main.css";
 import FormContainer from "../FormContainer/FormContainer";
 import FormNavigation from "../FormNavigation/FormNavigation";
 import Form from "../Form/Form";
-import { useCalculateAmountsAndPayments } from "../../utils/useCalculateTotalAmount";
 import { validateForm, FormErrors } from "../../utils/validation";
 import Portfolio from "../Portfolio/Portfolio";
 import SubscriptionDetails from "../SubscriptionDetails/SubscriptionDetails";
 import { CryptoConvertProvider } from "../../context/CryptoConvertContext";
 import { useAuth } from "../../context/AuthContext";
+import { Position } from "../../../declarations/dca_backend/dca_backend.did.js";
 
 import {
     handleInternetIdentityAuth,
@@ -57,18 +57,16 @@ const Main: React.FC = () => {
     useEffect(() => {
         const initializeAuthClient = async () => {
             try {
-                // Создание AuthClient
                 const authClient = await AuthClient.create({
                     storage: new LocalStorage(),
                     keyType: "Ed25519",
                     idleOptions: {
-                        idleTimeout: 1000 * 60 * 30, // 30 минут
+                        idleTimeout: 1000 * 60 * 30,
                         disableDefaultIdleCallback: true,
                     },
                 });
 
-                // Проверка состояния подключения и настройка контекста
-                const isAuthenticated = await authClient.isAuthenticated(); // Ожидаем результат
+                const isAuthenticated = await authClient.isAuthenticated();
                 if (isAuthenticated) {
                     const identity = authClient.getIdentity();
                     setIsConnected(true);
