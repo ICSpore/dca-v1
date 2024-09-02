@@ -69,6 +69,19 @@
     -moz-appearance: textfield;
 }
 
+.select-input__balance-info {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 5px;
+}
+
+.select-input__description {
+    font-size: 14px;
+    font-weight: 200;
+}
+
 .error {
     border: 2px solid red;
     border-radius: 5px;

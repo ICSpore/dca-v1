@@ -3,6 +3,9 @@
     margin: 0;
     padding: 0;
     margin-bottom: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .wallet-info__element-container {
@@ -14,6 +17,12 @@
     background-color: rgb(19, 21, 22);
     border: 1px solid rgb(48, 50, 58);
     border-radius: 16px;
+}
+
+.wallet-info__element-container_vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
 }
 
 .wallet-info__element-sub-container {
@@ -43,4 +52,155 @@
 
 .wallet-info__icon_copy {
     cursor: pointer;
+}
+
+.wallet-info__element-description {
+    font-size: 19px;
+}
+
+.wallet-info__option-description {
+    font-size: 16px;
+    max-width: 60%;
+    color: rgb(201, 203, 211);
+}
+
+.wallet-info__withrdaw-checkbox-option {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.wallet-info__checkbox-container {
+    display: flex;
+    align-items: center;
+}
+
+.wallet-info__checkbox {
+    width: 110px;
+    height: 30px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.wallet-info__checkbox-input {
+    opacity: 0.011;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    cursor: pointer;
+}
+
+.wallet-info__checkbox-label {
+    font-size: 13px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border-radius: 4px;
+    z-index: 0;
+    transition: background 0.3s, border-color 0.3s;
+    border: 1px solid #ffffff;
+    border-radius: 15px;
+    color: rgb(201, 203, 211);
+}
+
+.wallet-info__checkbox-input:hover + .wallet-info__checkbox-label {
+    background: #20b9be8b;
+}
+
+.wallet-info__checkbox-input:checked + .wallet-info__checkbox-label {
+    background: #20b8be;
+    border-color: #20b8be;
+    color: white;
+}
+
+.wallet-info__withdraw-button {
+    margin-top: 25px;
+    background-color: #20b8be; /* Цвет кнопки в активном состоянии */
+    border: none;
+    border-radius: 5px;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+.wallet-info__withdraw-button:hover {
+    background-color: #20b9be8b; /* Цвет кнопки при наведении */
+}
+
+.wallet-info__withdraw-button:disabled {
+    background-color: #cccccc; /* Цвет кнопки в неактивном состоянии */
+    cursor: not-allowed;
+}
+
+.wallet-info__input-label {
+    color: rgb(201, 203, 211);
+}
+
+.wallet-info__label {
+    margin-bottom: 5px;
+}
+
+.wallet-info__controls {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background-color: #323232;
+    border-radius: 8px;
+}
+
+.wallet-info__input {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    flex: 1 1 30%;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+    font-size: 18px;
+    background-color: #323232;
+}
+
+.wallet-info__text-field {
+    flex: 1 1 70%;
+    padding: 5px;
+    border-radius: 5px;
+    border: none;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 18px;
+    text-align: right;
+    color: #fff;
+    background-color: #323232;
+
+    /* Убираем стрелки увеличения числа */
+    -moz-appearance: textfield; /* Для Firefox */
+    -webkit-appearance: none; /* Для Chrome, Safari, Edge */
+    appearance: none;
+
+    /* Отключаем увеличение числа скроллом */
+    overflow: hidden;
+}
+
+.wallet-info__text-field::-webkit-outer-spin-button,
+.wallet-info__text-field::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.wallet-info__text-field[type="number"] {
+    -moz-appearance: textfield;
+}
+
+.wallet-info__text-field_principal {
+    font-size: 15px;
 }

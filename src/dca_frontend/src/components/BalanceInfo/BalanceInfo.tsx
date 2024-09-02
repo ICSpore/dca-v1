@@ -2,7 +2,11 @@ import React, { useEffect, useState } from "react";
 import "./BalanceInfo.css";
 import { useAuth } from "../../context/AuthContext";
 
-const BalanceInfo: React.FC = () => {
+interface BalanceInfoProps {
+    getBalance?: (balance: number | null) => void; // Изменен тип getBalance
+}
+
+const BalanceInfo: React.FC<BalanceInfoProps> = ({ getBalance }) => {
     const { isConnected, actorLedger, principal } = useAuth();
 
     const [balance, setBalance] = useState<number | null>(null);
@@ -11,7 +15,12 @@ const BalanceInfo: React.FC = () => {
         if (isConnected && actorLedger && principal) {
             try {
                 const res = await actorLedger.icrc1_balance_of({ owner: principal, subaccount: [] });
-                setBalance(Number(res) / 100000000);
+                const updatedBalance = Number(res) / 100000000;
+                setBalance(updatedBalance);
+
+                if (getBalance) {
+                    getBalance(updatedBalance);
+                }
             } catch (error) {
                 console.warn(`Error fetching balance: ${error}`);
             }
@@ -32,7 +41,6 @@ const BalanceInfo: React.FC = () => {
 
     return (
         <div className="balance-info">
-            <span className="balance-info__description">Minimum amount equals 0.1 ICP</span>
             <span className="balance-info__description">In wallet: {balance !== null ? `${balance} ICP` : "-"} </span>
         </div>
     );

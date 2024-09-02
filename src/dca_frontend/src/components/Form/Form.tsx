@@ -116,7 +116,10 @@ const Form: React.FC<FormProps> = ({ isWalletConnected }) => {
                             onInvalid={(e) => e.preventDefault()}
                         />
                     </div>
-                    <BalanceInfo />
+                    <div className="select-input__balance-info">
+                        <span className="select-input__description">Minimum amount equals 0.1 ICP</span>
+                        <BalanceInfo />
+                    </div>
                 </div>
 
                 <RadioButtons ref={frequencyRef} onDataChange={handleFrequencyChange} />
