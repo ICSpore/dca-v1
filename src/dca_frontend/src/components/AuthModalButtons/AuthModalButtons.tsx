@@ -29,7 +29,6 @@ const AuthModalButtons: React.FC = () => {
                 setAuthClient(client);
                 const identity = client.getIdentity();
                 const actorBackend = await createActor(whitelist[1], backend, identity);
-                console.log(actorBackend);
                 const actorLedger = await createActor(whitelist[2], legger, identity);
 
                 setActorBackend(actorBackend);
