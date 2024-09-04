@@ -91,9 +91,7 @@ const OpenPosition: React.FC<OpenPositionProps> = ({
 
             const allowanceInNumber = Number(allowanceResult.allowance);
 
-            const totalPurchasesAmmount =
-                (BigInt(amount) * BigInt(100000000) + BigInt(10_000)) * BigInt(numberOfPayments) +
-                BigInt(allowanceInNumber);
+            const totalPurchasesAmmount = (amount * 100000000 + 10_000) * numberOfPayments + allowanceInNumber;
 
             const approveArgs = {
                 amount: totalPurchasesAmmount,
