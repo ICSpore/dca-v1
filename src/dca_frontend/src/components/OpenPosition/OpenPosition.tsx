@@ -90,7 +90,6 @@ const OpenPosition: React.FC<OpenPositionProps> = ({
             const allowanceResult = await actorLedger.icrc2_allowance(allowanceArgs);
 
             const allowanceInNumber = Number(allowanceResult.allowance);
-
             const totalPurchasesAmmount = (amount * 100000000 + 10_000) * numberOfPayments + allowanceInNumber;
 
             const approveArgs = {

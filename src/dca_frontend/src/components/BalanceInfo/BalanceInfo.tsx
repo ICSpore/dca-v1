@@ -3,33 +3,42 @@ import "./BalanceInfo.css";
 import { useAuth } from "../../context/AuthContext";
 
 interface BalanceInfoProps {
-    getBalance?: (balance: number | null) => void; // Изменен тип getBalance
+    getBalance?: (balance: number | null) => void;
+    token: string | null; // Добавляем новый пропс token
 }
 
-const BalanceInfo: React.FC<BalanceInfoProps> = ({ getBalance }) => {
-    const { isConnected, actorLedger, principal } = useAuth();
-
+const BalanceInfo: React.FC<BalanceInfoProps> = ({ getBalance, token }) => {
+    const { isConnected, actorLedger, actorCKBTCLedger, principal } = useAuth();
     const [balance, setBalance] = useState<number | null>(null);
 
     const fetchBalance = async () => {
-        if (isConnected && actorLedger && principal) {
-            try {
-                const res = await actorLedger.icrc1_balance_of({ owner: principal, subaccount: [] });
+        if (!isConnected || !principal) return;
+
+        try {
+            let res;
+            if (token === "ICP" && actorLedger) {
+                res = await actorLedger.icrc1_balance_of({ owner: principal, subaccount: [] });
+            } else if (token === "ckBTC" && actorCKBTCLedger) {
+                res = await actorCKBTCLedger.icrc1_balance_of({ owner: principal, subaccount: [] });
+            } else if (token === null) {
+                setBalance(null);
+                if (getBalance) getBalance(null);
+                return;
+            }
+
+            if (res >= 0) {
                 const updatedBalance = Number(res) / 100000000;
                 setBalance(updatedBalance);
-
-                if (getBalance) {
-                    getBalance(updatedBalance);
-                }
-            } catch (error) {
-                console.warn(`Error fetching balance: ${error}`);
+                if (getBalance) getBalance(updatedBalance);
             }
+        } catch (error) {
+            console.warn(`Error fetching balance: ${error}`);
         }
     };
 
     useEffect(() => {
         fetchBalance();
-    }, [isConnected, actorLedger, principal]);
+    }, [isConnected, token, actorLedger, actorCKBTCLedger, principal]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -37,17 +46,15 @@ const BalanceInfo: React.FC<BalanceInfoProps> = ({ getBalance }) => {
         }, 60000);
 
         return () => clearInterval(intervalId);
-    }, []);
+    }, [token]);
 
     return (
         <div className="balance-info">
-            <span className="balance-info__description">In wallet: {balance !== null ? `${balance} ICP` : "-"} </span>
+            <span className="balance-info__description">
+                In wallet: {balance !== null ? `${balance} ${token}` : "-"}
+            </span>
         </div>
     );
 };
-export default BalanceInfo;
 
-//10000000000/100000000 1icp = 1 и 8 нулей
-// portfolio getallpositions
-//
-//(viewContract = closePosition) func (positionId)
+export default BalanceInfo;

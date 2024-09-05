@@ -56,9 +56,11 @@
 
 .wallet-info__element-description {
     font-size: 19px;
+    max-width: 300px;
 }
 
 .wallet-info__option-description {
+    margin: 0;
     font-size: 16px;
     max-width: 60%;
     color: rgb(201, 203, 211);
@@ -69,6 +71,7 @@
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    padding-top: 17px;
 }
 
 .wallet-info__checkbox-container {
@@ -146,6 +149,8 @@
 
 .wallet-info__input-label {
     color: rgb(201, 203, 211);
+    padding-top: 17px;
+    width: 100%;
 }
 
 .wallet-info__label {
@@ -201,6 +206,17 @@
     -moz-appearance: textfield;
 }
 
-.wallet-info__text-field_principal {
+/* .wallet-info__text-field_principal {
     font-size: 15px;
+} */
+
+.wallet-info__input-info {
+    font-size: 14px;
+    font-weight: 200;
+}
+
+.wallet-info__error-message {
+    max-width: 390px;
+    font-size: 10px;
+    color: rgba(217, 24, 24, 0.535);
 }

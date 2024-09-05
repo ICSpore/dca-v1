@@ -118,7 +118,7 @@ const Form: React.FC<FormProps> = ({ isWalletConnected }) => {
                     </div>
                     <div className="select-input__balance-info">
                         <span className="select-input__description">Minimum amount equals 0.1 ICP</span>
-                        <BalanceInfo />
+                        <BalanceInfo token="ICP" />
                     </div>
                 </div>
 
