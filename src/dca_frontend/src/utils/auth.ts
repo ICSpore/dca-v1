@@ -15,7 +15,6 @@ export const getIdentityProvider = (): string | undefined => {
         } else if (isLocal) {
             return `http://${process.env.CANISTER_ID_INTERNET_IDENTITY}.localhost:4943`;
         } else {
-            console.log("prod");
             return `https://identity.ic0.app/#authorize`;
         }
     }

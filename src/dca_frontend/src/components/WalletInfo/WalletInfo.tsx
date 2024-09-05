@@ -25,6 +25,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
     const [balance, setBalance] = useState<number | null>(null);
     const [walletPrincipal, setWalletPrincipal] = useState<string>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const optionsToWithdraw = [
@@ -87,12 +88,12 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                 }
 
                 if (transferResult && "Ok" in transferResult) {
-                    console.log("Transfer successful: ", transferResult.Ok);
+                    setSuccessMessage(transferResult.Ok);
+                    console.log("Transfer successful: ", transferResult);
                 } else {
                     console.log(1, transferResult.Err);
 
                     if (transferResult.Err && typeof transferResult.Err === "object") {
-                        // Получаем первый ключ объекта ошибки
                         const errorKey = Object.keys(transferResult.Err)[0];
                         setErrorMessage(`Transfer failed: ${errorKey}`);
                     } else {
@@ -234,6 +235,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                             {isLoading ? "Processing..." : "Withdraw"}
                         </button>
                         {errorMessage && <span className="wallet-info__error-message">{errorMessage}</span>}
+                        {successMessage && <span className="wallet-info__error-message">{successMessage}</span>}
                     </div>
                 </li>
             </ul>
