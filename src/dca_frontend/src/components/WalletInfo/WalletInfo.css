@@ -220,3 +220,8 @@
     font-size: 10px;
     color: rgba(217, 24, 24, 0.535);
 }
+
+.wallet-info__withdraw-button_success {
+    background-color: rgb(77, 212, 172);
+    color: white;
+}

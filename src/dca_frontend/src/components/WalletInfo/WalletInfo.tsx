@@ -14,18 +14,19 @@ interface WalletInfoProps {
 }
 
 const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
-    const { isConnected, actorBackend, actorLedger, actorCKBTCLedger } = useAuth();
+    const { actorLedger, actorCKBTCLedger } = useAuth();
 
     const [isCopied, setIsCopied] = useState<boolean>(false);
     const [selectedWithdrawToken, setSelectedWithdrawToken] = useState<string | null>(null);
     const amountToWithdrawRef = useRef<HTMLInputElement>(null);
     const [amountToWithdraw, setAmountToWithdraw] = useState<number>(0);
     const [minimumAmountToWithdraw, setMinimumAmountToWithdraw] = useState<number>(0);
+    const [fee, setFee] = useState<number>(0);
     const [isFullAmount, setIsFullAmount] = useState<boolean>(false);
     const [balance, setBalance] = useState<number | null>(null);
     const [walletPrincipal, setWalletPrincipal] = useState<string>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [success, setSuccess] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const optionsToWithdraw = [
@@ -36,8 +37,10 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
     useEffect(() => {
         if (selectedWithdrawToken === "ICP") {
             setMinimumAmountToWithdraw(0.00010001);
+            setFee(0.0001);
         } else if (selectedWithdrawToken === "ckBTC") {
             setMinimumAmountToWithdraw(0.00000011);
+            setFee(0.0000001);
         } else {
             setMinimumAmountToWithdraw(0);
         }
@@ -66,7 +69,12 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
             try {
                 let transferResult;
                 if (selectedWithdrawToken === "ICP" && actorLedger) {
-                    const amountToTransfer = BigInt(amountToWithdraw * 100000000);
+                    let amountToTransfer;
+                    if (isFullAmount) {
+                        amountToTransfer = BigInt(amountToWithdraw * 100000000 - 10000);
+                    } else if (!isFullAmount) {
+                        amountToTransfer = BigInt(amountToWithdraw * 100000000);
+                    }
                     transferResult = await actorLedger.icrc1_transfer({
                         to: { owner: Principal.fromText(walletPrincipal), subaccount: [] },
                         fee: [BigInt(10000)],
@@ -88,8 +96,12 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                 }
 
                 if (transferResult && "Ok" in transferResult) {
-                    setSuccessMessage(transferResult.Ok);
+                    setSuccess(true);
                     console.log("Transfer successful: ", transferResult);
+
+                    setTimeout(() => {
+                        setSuccess(false);
+                    }, 2000);
                 } else {
                     console.log(1, transferResult.Err);
 
@@ -199,7 +211,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                             min={0}
                             ref={amountToWithdrawRef}
                             placeholder="Amount"
-                            value={isFullAmount && balance !== null ? balance : amountToWithdraw}
+                            value={isFullAmount && balance !== null ? Math.max(balance - fee, 0) : amountToWithdraw}
                             onChange={handleAmountToWithdrawChange}
                             disabled={isFullAmount}
                             onInvalid={(e) => e.preventDefault()}
@@ -223,7 +235,9 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                         />
                         <button
                             onClick={withdraw}
-                            className="wallet-info__withdraw-button"
+                            className={`wallet-info__withdraw-button ${
+                                success ? "wallet-info__withdraw-button_success" : ""
+                            }`}
                             disabled={
                                 !selectedWithdrawToken ||
                                 !amountToWithdraw ||
@@ -232,10 +246,9 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                                 isLoading
                             }
                         >
-                            {isLoading ? "Processing..." : "Withdraw"}
+                            {isLoading ? "Processing..." : success ? "Success" : "Withdraw"}
                         </button>
                         {errorMessage && <span className="wallet-info__error-message">{errorMessage}</span>}
-                        {successMessage && <span className="wallet-info__error-message">{successMessage}</span>}
                     </div>
                 </li>
             </ul>
