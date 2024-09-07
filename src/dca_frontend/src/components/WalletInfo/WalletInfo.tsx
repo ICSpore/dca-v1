@@ -26,7 +26,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
     const [balance, setBalance] = useState<number | null>(null);
     const [walletPrincipal, setWalletPrincipal] = useState<string>("");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
-    const [success, setSuccess] = useState<boolean>(true);
+    const [success, setSuccess] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
 
     const optionsToWithdraw = [
@@ -160,7 +160,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                     <div className="wallet-info__element-container">
                         <div className="wallet-info__element-sub-container">
                             <img className="wallet-info__icon" src={icpIcon} alt="ICP Icon" />
-                            <span className="wallet-info__element">Principal ID</span>
+                            <span className="wallet-info__element">Service principal ID</span>
                         </div>
                         <div className="wallet-info__element-sub-container">
                             <span className="wallet-info__value">{principalId}</span>
@@ -224,7 +224,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                                 ? "0.00000011 ckBTC"
                                 : "-"}
                         </span>
-                        <label className="wallet-info__input-label">4. Tell us your wallet Principal ID:</label>
+                        <label className="wallet-info__input-label">4. Tell us your wallet principal ID:</label>
                         <input
                             className="wallet-info__text-field wallet-info__text-field_principal"
                             type="text"
