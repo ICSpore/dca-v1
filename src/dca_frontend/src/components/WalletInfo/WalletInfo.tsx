@@ -84,7 +84,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                         amount: amountToTransfer,
                     });
                 } else if (selectedWithdrawToken === "ckBTC" && actorCKBTCLedger) {
-                    const amountToTransfer = BigInt(amountToWithdraw * 100000000);
+                    const amountToTransfer = BigInt(amountToWithdraw * 100000000 - fee);
                     transferResult = await actorCKBTCLedger.icrc1_transfer({
                         to: { owner: Principal.fromText(walletPrincipal), subaccount: [] },
                         fee: [BigInt(10)],
