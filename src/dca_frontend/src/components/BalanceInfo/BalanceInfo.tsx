@@ -51,7 +51,7 @@ const BalanceInfo: React.FC<BalanceInfoProps> = ({ getBalance, token }) => {
     return (
         <div className="balance-info">
             <span className="balance-info__description">
-                In wallet: {balance !== null ? `${balance} ${token}` : "-"}
+                In wallet: {balance !== null ? `${balance.toFixed(8)} ${token}` : "-"}
             </span>
         </div>
     );

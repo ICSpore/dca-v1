@@ -71,7 +71,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                 if (selectedWithdrawToken === "ICP" && actorLedger) {
                     let amountToTransfer;
                     if (isFullAmount) {
-                        amountToTransfer = BigInt(amountToWithdraw * 100000000 - 10000);
+                        amountToTransfer = BigInt(amountToWithdraw * 100000000 - fee);
                     } else if (!isFullAmount) {
                         amountToTransfer = BigInt(amountToWithdraw * 100000000);
                     }
@@ -188,7 +188,7 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                         />
                         <BalanceInfo getBalance={handleGetBalance} token={selectedWithdrawToken} />
                         <div className="wallet-info__withrdaw-checkbox-option">
-                            <p className="wallet-info__option-description">2. Do you want to withdraw full amount?</p>
+                            <p className="wallet-info__option-description">2. Do you want to withdraw max amount?</p>
                             <div className="wallet-info__checkbox-container">
                                 <div className="wallet-info__checkbox">
                                     <input
