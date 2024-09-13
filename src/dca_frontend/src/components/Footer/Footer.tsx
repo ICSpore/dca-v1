@@ -18,11 +18,7 @@ const Footer: React.FC = () => {
                     <h4 className="footer__column-title">Docs</h4>
                     <ul className="footer__link-list">
                         <li className="footer__link">
-                            <a
-                                href="https://github.com/yokifinance/yoki-dca-protocol-ic"
-                                target="_blank"
-                                className="footer__link"
-                            >
+                            <a href="https://github.com/ICSpore/dca-v1" target="_blank" className="footer__link">
                                 <img className="footer__link-icon" src={gitHubIcon} alt="GitHub icon" />
                                 <span className="footer__link-description">GitHub</span>
                             </a>
@@ -34,7 +30,7 @@ const Footer: React.FC = () => {
                     <ul className="footer__link-list">
                         <li className="footer__link">
                             <a
-                                href="https://oc.app/favourite/group/a3kje-taaaa-aaaar-bjgtq-cai"
+                                href="https://oc.app/community/ijf7l-liaaa-aaaaf-bm4ya-cai/channel/7099643226996241201990501345632831172/"
                                 className="footer__link"
                                 target="_blank"
                             >
