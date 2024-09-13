@@ -69,7 +69,7 @@ actor class DCA() = self {
     };
 
     // Set allowed worker to execute "executePurchase" method
-    let admin = Principal.fromText("klcto-2xe2e-hjit4-wphri-c3ify-wgrjd-jc5c2-pbvjd-gpwdx-ib2ra-hae");
+    let admin = Principal.fromText("hfugy-ahqdz-5sbki-vky4l-xceci-3se5z-2cb7k-jxjuq-qidax-gd53f-nqe");
 
     // Method to create a new position
     public shared ({ caller }) func openPosition(newPosition : Position) : async Result<PositionId, Text> {
