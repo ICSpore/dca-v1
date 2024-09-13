@@ -38,21 +38,20 @@ With this project you can create an executable DCA financial strategy in IC (Int
 [ICSpore DCA](https://qnoqa-vaaaa-aaaap-qhima-cai.icp0.io/)
 
 ### Create Position
-![DCA_Demo](https://ipfs.io/ipfs/bafybeiae2ylkcjgt66ihu3sukzktbuc2qbwf6qktp2db4ltmanymsbq7yu)
+<img src="https://ipfs.io/ipfs/bafybeiae2ylkcjgt66ihu3sukzktbuc2qbwf6qktp2db4ltmanymsbq7yu" width="400" height="400"/>
 
-
-### Portfolio management
-![DCA_Portfolio](https://ipfs.io/ipfs/QmckoqWWh7uwDMmgsgaxNXQdUazktsmQUFcHwrkPReXqZw)
-
+### Portfolio managment
+<img src="https://ipfs.io/ipfs/QmckoqWWh7uwDMmgsgaxNXQdUazktsmQUFcHwrkPReXqZw" width="400" height="400"/>
 
 ### Withdraw process
-![DCA_Withdraw](https://ipfs.io/ipfs/QmVK6T6HSUyvVVjH3Tzsd6ENxMh3oBLMNTrDokQgVqd5jJ)
+<img src="https://ipfs.io/ipfs/QmVK6T6HSUyvVVjH3Tzsd6ENxMh3oBLMNTrDokQgVqd5jJ" width="400" height="400"/>
 
 ## Dfx sdk OR Intercanister call
 
 ### Step 1. Set Approve to DCA canister
 
 This call make future transfer from your wallet possible without any additional actions
+
 
 ```bash
 dfx canister call ryjl3-tyaaa-aaaaa-aaaba-cai  icrc2_approve '(record { amount = 40_000; spender = record{owner = principal "up2ak-nqaaa-aaaap-qccia-cai";} })' --ic
