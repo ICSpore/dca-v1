@@ -45,9 +45,9 @@ const Footer: React.FC = () => {
                             </a>
                         </li>
                         <li className="footer__link">
-                            <a href="https://x.com/icspore" target="_blank" className="footer__link">
+                            <a href="https://x.com/IC_Spore" target="_blank" className="footer__link">
                                 <img className="footer__link-icon" src={xLogo} alt="Twitter/X icon" />
-                                <span className="footer__link-description">x.com</span>
+                                <span className="footer__link-description">ICSpore</span>
                             </a>
                         </li>
                     </ul>
