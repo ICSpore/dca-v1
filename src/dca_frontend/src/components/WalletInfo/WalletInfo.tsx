@@ -46,13 +46,13 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
         }
     }, [selectedWithdrawToken]);
 
-    useEffect(() => {
-        const isButtonDisabled =
-            !selectedWithdrawToken || // Не выбран токен
-            !amountToWithdraw || // Сумма не заполнена
-            amountToWithdraw < minimumAmountToWithdraw || // Сумма меньше минимальной
-            !walletPrincipal; // Principal ID не заполнен
-    }, [walletPrincipal, amountToWithdraw, selectedWithdrawToken, minimumAmountToWithdraw]);
+    // useEffect(() => {
+    //     const isButtonDisabled =
+    //         !selectedWithdrawToken ||
+    //         !amountToWithdraw ||
+    //         amountToWithdraw < minimumAmountToWithdraw ||
+    //         !walletPrincipal;
+    // }, [walletPrincipal, amountToWithdraw, selectedWithdrawToken, minimumAmountToWithdraw]);
 
     const handleGetBalance = (newBalance: number | null) => {
         setBalance(newBalance);
@@ -68,13 +68,13 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
         if (selectedWithdrawToken) {
             try {
                 let transferResult;
+                const amountToWithdrawFixed = Number(amountToWithdraw.toFixed(8)) * 100000000;
+                const feeFixed = Number(fee.toFixed(8)) * 100000000;
+                console.log(amountToWithdrawFixed, feeFixed);
+                const amountToTransfer = BigInt(amountToWithdrawFixed - feeFixed);
+                console.log(amountToTransfer);
+
                 if (selectedWithdrawToken === "ICP" && actorLedger) {
-                    let amountToTransfer;
-                    if (isFullAmount) {
-                        amountToTransfer = BigInt(amountToWithdraw * 100000000 - fee);
-                    } else if (!isFullAmount) {
-                        amountToTransfer = BigInt(amountToWithdraw * 100000000);
-                    }
                     transferResult = await actorLedger.icrc1_transfer({
                         to: { owner: Principal.fromText(walletPrincipal), subaccount: [] },
                         fee: [BigInt(10000)],
@@ -84,7 +84,6 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                         amount: amountToTransfer,
                     });
                 } else if (selectedWithdrawToken === "ckBTC" && actorCKBTCLedger) {
-                    const amountToTransfer = BigInt(amountToWithdraw * 100000000);
                     transferResult = await actorCKBTCLedger.icrc1_transfer({
                         to: { owner: Principal.fromText(walletPrincipal), subaccount: [] },
                         fee: [BigInt(10)],
@@ -211,7 +210,11 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                             min={0}
                             ref={amountToWithdrawRef}
                             placeholder="Amount"
-                            value={isFullAmount && balance !== null ? Math.max(balance - fee, 0) : amountToWithdraw}
+                            value={
+                                isFullAmount && balance !== null
+                                    ? Math.max(Number((balance - fee).toFixed(8)), 0)
+                                    : amountToWithdraw
+                            }
                             onChange={handleAmountToWithdrawChange}
                             disabled={isFullAmount}
                             onInvalid={(e) => e.preventDefault()}
