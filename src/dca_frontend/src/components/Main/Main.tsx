@@ -9,6 +9,7 @@ import SubscriptionDetails from "../SubscriptionDetails/SubscriptionDetails";
 import { CryptoConvertProvider } from "../../context/CryptoConvertContext";
 import { useAuth } from "../../context/AuthContext";
 import { Position } from "../../../declarations/dca_backend/dca_backend.did.js";
+import { idlFactory as ckbtcLedger } from "../../../declarations/ckBTC_ledger_canister/ckBTC_ledger_canister.did.js";
 
 import {
     handleInternetIdentityAuth,
@@ -23,12 +24,6 @@ import { idlFactory as legger } from "../../../declarations/icp_ledger_canister/
 
 const Main: React.FC = () => {
     const {
-        authClient,
-        isConnected,
-        identity,
-        principal,
-        actorBackend,
-        actorLedger,
         whitelist,
         setAuthClient,
         setIsConnected,
@@ -36,6 +31,7 @@ const Main: React.FC = () => {
         setPrincipal,
         setActorBackend,
         setActorLedger,
+        setActorCKBTCLedger,
         setWhitelist,
     } = useAuth();
     const [isWalletConnected, setIsWalletConnected] = useState<boolean>(false);
@@ -76,6 +72,9 @@ const Main: React.FC = () => {
 
                     const actorBackend = await createActor(whitelist[1], backend, identity);
                     const actorLedger = await createActor(whitelist[2], legger, identity);
+                    const actorCkbtcCLedger = await createActor(whitelist[3], ckbtcLedger, identity);
+
+                    setActorCKBTCLedger(actorCkbtcCLedger);
                     setActorBackend(actorBackend);
                     setActorLedger(actorLedger);
                 }

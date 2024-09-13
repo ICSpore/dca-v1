@@ -11,6 +11,7 @@ interface AuthContextType {
     principal: Principal | undefined;
     actorBackend: any;
     actorLedger: any;
+    actorCKBTCLedger: any;
     whitelist: string[];
     setAuthClient: React.Dispatch<React.SetStateAction<AuthClient | undefined>>;
     setIsConnected: React.Dispatch<React.SetStateAction<boolean>>;
@@ -18,6 +19,7 @@ interface AuthContextType {
     setPrincipal: React.Dispatch<React.SetStateAction<Principal | undefined>>;
     setActorBackend: React.Dispatch<React.SetStateAction<any>>;
     setActorLedger: React.Dispatch<React.SetStateAction<any>>;
+    setActorCKBTCLedger: React.Dispatch<React.SetStateAction<any>>;
     setWhitelist: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
@@ -38,6 +40,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [principal, setPrincipal] = useState<Principal>();
     const [actorBackend, setActorBackend] = useState<any>(null);
     const [actorLedger, setActorLedger] = useState<any>(null);
+    const [actorCKBTCLedger, setActorCKBTCLedger] = useState<any>(null);
     const [whitelist, setWhitelist] = useState<string[]>([]);
 
     return (
@@ -49,6 +52,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 principal,
                 actorBackend,
                 actorLedger,
+                actorCKBTCLedger,
                 whitelist,
                 setAuthClient,
                 setIsConnected,
@@ -57,6 +61,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setActorBackend,
                 setActorLedger,
                 setWhitelist,
+                setActorCKBTCLedger,
             }}
         >
             {children}

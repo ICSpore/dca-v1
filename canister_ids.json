@@ -1,9 +1,8 @@
 {
     "dca_backend": {
-      "ic": "up2ak-nqaaa-aaaap-qccia-cai"
+        "ic": "up2ak-nqaaa-aaaap-qccia-cai"
     },
     "dca_frontend": {
-      "ic": "qnoqa-vaaaa-aaaap-qhima-cai"
+        "ic": "qnoqa-vaaaa-aaaap-qhima-cai"
     }
-  
-  }
+}

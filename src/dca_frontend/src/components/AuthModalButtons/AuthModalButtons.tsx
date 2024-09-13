@@ -6,6 +6,7 @@ import { handleInternetIdentityAuth, createActor, disconnectInternetIdentity } f
 import { useAuth } from "../../context/AuthContext";
 import { idlFactory as backend } from "../../../declarations/dca_backend/dca_backend.did.js";
 import { idlFactory as legger } from "../../../declarations/icp_ledger_canister/icp_ledger_canister.did.js";
+import { idlFactory as ckbtcLedger } from "../../../declarations/ckBTC_ledger_canister/ckBTC_ledger_canister.did.js";
 
 const AuthModalButtons: React.FC = () => {
     const {
@@ -19,6 +20,7 @@ const AuthModalButtons: React.FC = () => {
         setPrincipal,
         setActorBackend,
         setActorLedger,
+        setActorCKBTCLedger,
     } = useAuth();
 
     const handleLoginToInternetIdentity = async () => {
@@ -30,9 +32,10 @@ const AuthModalButtons: React.FC = () => {
                 const identity = client.getIdentity();
                 const actorBackend = await createActor(whitelist[1], backend, identity);
                 const actorLedger = await createActor(whitelist[2], legger, identity);
-
+                const actorCkbtcCLedger = await createActor(whitelist[3], ckbtcLedger, identity);
                 setActorBackend(actorBackend);
                 setActorLedger(actorLedger);
+                setActorCKBTCLedger(actorCkbtcCLedger);
                 setPrincipal(identity.getPrincipal());
                 setIdentity(identity);
             }
