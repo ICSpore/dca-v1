@@ -34,9 +34,6 @@ With this project you can create an executable DCA financial strategy in IC (Int
 | DCA frontend   | qnoqa-vaaaa-aaaap-qhima-cai | Open beta |[DCA frontend](https://qnoqa-vaaaa-aaaap-qhima-cai.icp0.io/)
 
 
-## Webapp
-[ICSpore DCA](https://qnoqa-vaaaa-aaaap-qhima-cai.icp0.io/)
-
 ### Create Position
 <img src="https://ipfs.io/ipfs/bafybeiae2ylkcjgt66ihu3sukzktbuc2qbwf6qktp2db4ltmanymsbq7yu" width="400" height="400"/>
 
