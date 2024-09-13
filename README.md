@@ -28,10 +28,10 @@ With this project you can create an executable DCA financial strategy in IC (Int
 
 
 ## Mainnet interactions
-| Canister type | Canister id | Stage |
-|---------------|-------------|-------|
-| DCA backend   | up2ak-nqaaa-aaaap-qccia-cai | Open beta |
-| DCA frontend   | qnoqa-vaaaa-aaaap-qhima-cai | Open beta |
+| Canister type | Canister id | Stage | URL |
+|---------------|-------------|-------|-----|
+| DCA backend   | up2ak-nqaaa-aaaap-qccia-cai | Open beta | [Candid UI](https://a4gq6-oaaaa-aaaab-qaa4q-cai.raw.icp0.io/?id=up2ak-nqaaa-aaaap-qccia-cai) |
+| DCA frontend   | qnoqa-vaaaa-aaaap-qhima-cai | Open beta |[DCA frontend](https://qnoqa-vaaaa-aaaap-qhima-cai.icp0.io/)
 
 
 ## Webapp
