@@ -13,6 +13,13 @@ interface WalletInfoProps {
     principalId: string;
 }
 
+interface ErrorMessages {
+    token: null | string;
+    amount: null | string;
+    principal: null | string;
+    result: null | string;
+}
+
 const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
     const { actorLedger, actorCKBTCLedger } = useAuth();
 
@@ -25,14 +32,24 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
     const [isFullAmount, setIsFullAmount] = useState<boolean>(false);
     const [balance, setBalance] = useState<number | null>(null);
     const [walletPrincipal, setWalletPrincipal] = useState<string>("");
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [success, setSuccess] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [hasErrors, setHasErrors] = useState<boolean>(false);
+    const [errorMessages, setErrorMessages] = useState<ErrorMessages>({
+        token: null,
+        amount: null,
+        principal: null,
+        result: null,
+    });
 
     const optionsToWithdraw = [
         { label: "ICP", value: "ICP", icon: <img src={icpIcon} alt="ICP Icon" />, available: true },
         { label: "ckBTC", value: "ckBTC", icon: <img src={ckBTCIcon} alt="ckBTC Icon" />, available: true },
     ];
+
+    useEffect(() => {
+        withdrawFormInputsValidation();
+    }, [hasErrors, walletPrincipal]);
 
     useEffect(() => {
         if (selectedWithdrawToken === "ICP") {
@@ -46,13 +63,21 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
         }
     }, [selectedWithdrawToken]);
 
-    // useEffect(() => {
-    //     const isButtonDisabled =
-    //         !selectedWithdrawToken ||
-    //         !amountToWithdraw ||
-    //         amountToWithdraw < minimumAmountToWithdraw ||
-    //         !walletPrincipal;
-    // }, [walletPrincipal, amountToWithdraw, selectedWithdrawToken, minimumAmountToWithdraw]);
+    const withdrawFormInputsValidation = () => {
+        if (principalId === walletPrincipal) {
+            setErrorMessages((prevMessages) => ({
+                ...prevMessages,
+                principal: "Use your wallet Principal ID instead of service Principal ID",
+            }));
+            setHasErrors(true);
+        } else {
+            setErrorMessages((prevMessages) => ({
+                ...prevMessages,
+                principal: "",
+            }));
+            setHasErrors(false);
+        }
+    };
 
     const handleGetBalance = (newBalance: number | null) => {
         setBalance(newBalance);
@@ -63,9 +88,8 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
 
     const withdraw = async () => {
         setIsLoading(true);
-        setErrorMessage(null);
 
-        if (selectedWithdrawToken) {
+        if (selectedWithdrawToken && !hasErrors) {
             try {
                 let transferResult;
                 const amountToWithdrawFixed = Number(amountToWithdraw.toFixed(8)) * 100000000;
@@ -102,24 +126,38 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                         setSuccess(false);
                     }, 2000);
                 } else {
-                    console.log(1, transferResult.Err);
-
                     if (transferResult.Err && typeof transferResult.Err === "object") {
                         const errorKey = Object.keys(transferResult.Err)[0];
-                        setErrorMessage(`Transfer failed: ${errorKey}`);
+                        setErrorMessages((prevMessages) => ({
+                            ...prevMessages,
+                            result: `Transfer failed: ${errorKey}`,
+                        }));
                     } else {
-                        setErrorMessage("Transfer failed: " + JSON.stringify(transferResult.Err));
+                        const errResult: string = JSON.stringify(transferResult.Err);
+                        setErrorMessages((prevMessages) => ({
+                            ...prevMessages,
+                            result: `Transfer failed: ${errResult}`,
+                        }));
                     }
                 }
             } catch (error) {
                 if (error instanceof Error) {
-                    setErrorMessage("Error during transfer: " + error.message);
+                    setErrorMessages((prevMessages) => ({
+                        ...prevMessages,
+                        result: `Error during transfer: ${error.message}`,
+                    }));
                 } else {
-                    setErrorMessage("Unknown error occurred");
+                    setErrorMessages((prevMessages) => ({
+                        ...prevMessages,
+                        result: `Unknown error occurred`,
+                    }));
                 }
             }
         } else {
-            setErrorMessage("No token selected");
+            setErrorMessages((prevMessages) => ({
+                ...prevMessages,
+                result: "No token selected",
+            }));
         }
 
         setIsLoading(false);
@@ -229,13 +267,16 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                         </span>
                         <label className="wallet-info__input-label">4. Tell us your wallet principal ID:</label>
                         <input
-                            className="wallet-info__text-field wallet-info__text-field_principal"
+                            className={`wallet-info__text-field wallet-info__text-field_principal`}
                             type="text"
                             placeholder="Principal Id"
                             onInvalid={(e) => e.preventDefault()}
                             value={walletPrincipal}
                             onChange={(e) => setWalletPrincipal(e.target.value)}
                         />
+                        {errorMessages.principal && (
+                            <span className="wallet-info__error-message">{errorMessages.principal}</span>
+                        )}
                         <button
                             onClick={withdraw}
                             className={`wallet-info__withdraw-button ${
@@ -246,12 +287,15 @@ const WalletInfo: React.FC<WalletInfoProps> = ({ principalId }) => {
                                 !amountToWithdraw ||
                                 amountToWithdraw < minimumAmountToWithdraw ||
                                 !walletPrincipal ||
-                                isLoading
+                                isLoading ||
+                                hasErrors
                             }
                         >
                             {isLoading ? "Processing..." : success ? "Success" : "Withdraw"}
                         </button>
-                        {errorMessage && <span className="wallet-info__error-message">{errorMessage}</span>}
+                        {errorMessages.result && (
+                            <span className="wallet-info__error-message">{errorMessages.result}</span>
+                        )}
                     </div>
                 </li>
             </ul>

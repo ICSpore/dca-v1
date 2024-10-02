@@ -217,11 +217,15 @@
 
 .wallet-info__error-message {
     max-width: 390px;
-    font-size: 10px;
-    color: rgba(217, 24, 24, 0.535);
+    font-size: 12px;
+    color: rgba(242, 24, 24, 0.71);
 }
 
 .wallet-info__withdraw-button_success {
     background-color: rgb(77, 212, 172);
     color: white;
+}
+
+.err {
+    border: 1px solid red;
 }
