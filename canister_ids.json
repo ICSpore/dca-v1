@@ -1,8 +1,14 @@
 {
-    "dca_backend": {
-        "ic": "up2ak-nqaaa-aaaap-qccia-cai"
-    },
-    "dca_frontend": {
-        "ic": "qnoqa-vaaaa-aaaap-qhima-cai"
-    }
+  "dca_backend": {
+    "ic": "up2ak-nqaaa-aaaap-qccia-cai"
+  },
+  "dca_frontend": {
+    "ic": "qnoqa-vaaaa-aaaap-qhima-cai"
+  },
+  "spore_point": {
+    "ic": "e6w3w-5qaaa-aaaap-qkf4a-cai"
+  },
+  "spore_point_index_canister": {
+    "ic": "4c5th-siaaa-aaaap-ansjq-cai"
+  }
 }
