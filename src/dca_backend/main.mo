@@ -14,13 +14,17 @@ import Result "mo:base/Result";
 import Text "mo:base/Text";
 import Time "mo:base/Time";
 import Timer "mo:base/Timer";
+import Error "mo:base/Error";
 import Map "mo:map/Map";
-import { phash } "mo:map/Map";
+import { phash; thash } "mo:map/Map";
 import { DAY; MINUTE; WEEK } "mo:time-consts";
 
-import I "./ICSwap";
+import I "./ICPSwap";
 import L "./Ledger";
 import Types "types";
+import DPC "./DynamicPoolCreator";
+import K "./KongSwap";
+import { tokenTickerFromPrincipalId } "./DynamicPoolCreator"
 
 actor class DCA() = self {
     // DCA Types
@@ -29,9 +33,29 @@ actor class DCA() = self {
     type Position = Types.Position;
     type TimerActionType = Types.TimerActionType;
     type Frequency = Types.Frequency;
+    type IcpSwapDynamicSwapProperties = Types.IcpSwapDynamicSwapProperties;
 
-    // Create HashMap to store a positions
+    // DEX Types
+    type DexInfo = Types.DexInfo;
+    type QuoteResponse = Types.QuoteResponse;
+    type IcpSwapPoolProperties = Types.IcpSwapPoolProperties;
+    type IcpSwapPoolActor = Types.IcpSwapPoolActor;
+    type KongSwapPoolActor = Types.KongSwapPoolActor;
+    type SwapArgs = K.SwapArgs;
+    type SwapResult = K.SwapResult;
+    type Ledger = Types.Ledger;
+    type Error = Types.Error;
+
+    // Create HashMap to store positions
     stable let positionsLedger = Map.new<Principal, [Position]>();
+
+    // Create HashMap to store ICPSwap pool configurations
+    private let icpSwapPoolMap = Map.new<Text, IcpSwapPoolProperties>();
+
+    private let kongSwapActor = actor("2ipq2-uqaaa-aaaar-qailq-cai"): KongSwapPoolActor;
+
+    // Create HashMap to store DEX configurations
+    private let dexMap = Map.new<Text, DexInfo>();
 
     // Timers vars
     var globalTimerId: Nat = 0;
@@ -40,46 +64,57 @@ actor class DCA() = self {
     // Trade vars
     let defaultSlippageInPercent: Float = 0.5;
 
-    // Create ICP Ledger actor
-    let Ledger = actor ("ryjl3-tyaaa-aaaaa-aaaba-cai") : actor {
-        icrc1_transfer : shared L.TransferArg -> async L.Result<>;
-        icrc2_approve : shared L.ApproveArgs -> async L.Result_1<>;
-        icrc2_transfer_from : shared L.TransferFromArgs -> async L.Result_2<>;
-        icrc1_balance_of : shared query L.Account -> async Nat;
-    };
-
-    // Create ckBTC Ledger actor
-    let ckBtcLedger = actor ("mxzaz-hqaaa-aaaar-qaada-cai") : actor {
-        icrc1_transfer : shared L.TransferArg -> async L.Result<>;
-        icrc2_approve : shared L.ApproveArgs -> async L.Result_1<>;
-        icrc2_transfer_from : shared L.TransferFromArgs -> async L.Result_2<>;
-        icrc1_balance_of : shared query L.Account -> async Nat;
-    };
-
-    // Create ICPSwap ICP/ckBTC pool actor
-    let ICPBTCpool = actor ("xmiu5-jqaaa-aaaag-qbz7q-cai") : actor {
-        deposit : shared (I.DepositArgs) -> async I.Result;
-        depositFrom : shared (I.DepositArgs) -> async I.Result;
-        swap : shared (I.SwapArgs) -> async I.Result;
-        getUserUnusedBalance : shared query (Principal) -> async I.Result_7;
-        withdraw : shared (I.WithdrawArgs) -> async I.Result;
-        applyDepositToDex : shared (I.DepositArgs) -> async I.Result;
-        quote : shared query (I.SwapArgs) -> async I.Result_8;
-
-    };
-
     // Set allowed worker to execute "executePurchase" method
     let admin = Principal.fromText("hfugy-ahqdz-5sbki-vky4l-xceci-3se5z-2cb7k-jxjuq-qidax-gd53f-nqe");
 
+    // Initialize pool configurations
+    private func initPoolConfigs() {
+        // Initialize pool configurations
+        let icpCkBtcPool: IcpSwapPoolProperties = {
+            poolPrincipalId = "xmiu5-jqaaa-aaaag-qbz7q-cai";
+            tokenToSellLedgerFee = 10_000; // ICP fee
+            tokenToBuyLedgerFee = 10; // ckBTC fee
+        };
+        ignore Map.put(icpSwapPoolMap, thash, DPC.makeKey("ICP", "ckBTC"), icpCkBtcPool);
+
+        // ICP/ckETH pool
+        let icpCkEthPool: IcpSwapPoolProperties = {
+            poolPrincipalId = "angxa-baaaa-aaaag-qcvnq-cai";
+            tokenToSellLedgerFee = 10_000; // ICP fee
+            tokenToBuyLedgerFee = 2_000_000_000_000; // ckETH fee 140_000
+        };
+        ignore Map.put(icpSwapPoolMap, thash, DPC.makeKey("ICP", "ckETH"), icpCkEthPool);
+
+        // ckUSDC/ICP pool
+        let icpUsdcPool: IcpSwapPoolProperties = {
+            poolPrincipalId = "mohjv-bqaaa-aaaag-qjyia-cai";
+            tokenToBuyLedgerFee = 10_000; // ckUSDC fee
+            tokenToSellLedgerFee = 10_000; // ICP fee
+        };
+        ignore Map.put(icpSwapPoolMap, thash, DPC.makeKey("ICP", "ckUSDC"), icpUsdcPool);
+
+        // ckUSDT/ICP pool
+        let icpUsdtPool: IcpSwapPoolProperties = {
+            poolPrincipalId = "hkstf-6iaaa-aaaag-qkcoq-cai";
+            tokenToSellLedgerFee = 10_000; // ckUSDT fee
+            tokenToBuyLedgerFee = 10_000; // ICP fee
+        };
+        ignore Map.put(icpSwapPoolMap, thash, DPC.makeKey("ICP", "ckUSDT"), icpUsdtPool);
+
+        Debug.print("[INFO]: Pool configurations initialized");
+    };
+
     // Method to create a new position
     public shared ({ caller }) func openPosition(newPosition : Position) : async Result<PositionId, Text> {
+        // Validate token pair exists in pool configurations
 
-        if (newPosition.tokenToBuy != Principal.fromText("mxzaz-hqaaa-aaaar-qaada-cai")) {
-            return #err("Not supported token to buy :( Only ckBTC at this moment");
-        };
+        let tokenToSellTicker: Text = tokenTickerFromPrincipalId(Principal.toText(newPosition.tokenToSell));
+        let tokenToBuyTicker: Text = tokenTickerFromPrincipalId(Principal.toText(newPosition.tokenToBuy));
 
-        if (newPosition.tokenToSell != Principal.fromText("ryjl3-tyaaa-aaaaa-aaaba-cai")) {
-            return #err("Not supported token to sell :( Only ICP at this moment");
+        let key = DPC.makeKey(tokenToSellTicker, tokenToBuyTicker);
+        switch (Map.get(icpSwapPoolMap, thash, key)) {
+            case null { return #err("Unsupported token pair: KEY - " # debug_show(key)) };
+            case (?_) {};
         };
 
         if (newPosition.purchasesLeft == 0) {
@@ -87,51 +122,37 @@ actor class DCA() = self {
         };
 
         let currentPositions: [Position] = switch (Map.get<Principal, [Position]>(positionsLedger, phash, caller)) {
-            case (null) {
-                // Create new Array if it does not exist
-                [];
-            };
-            case (?positions) {
-                // Use existing Array if it exists
-                positions;
-            };
+            case (null) { [] };
+            case (?positions) { positions };
         };
         let updatedPositions: [Position] = Array.append<Position>(currentPositions, [newPosition]);
 
-        // Save the Array to the Map
         ignore Map.put<Principal, [Position]>(positionsLedger, phash, caller, updatedPositions);
         Debug.print("[INFO]: User " # debug_show(caller) # " created new position: " # debug_show(newPosition));
         #ok(updatedPositions.size() - 1);
     };
 
     public shared query ({ caller }) func getAllPositions() : async Result<[Position], Text> {
-
         switch (Map.get<Principal, [Position]>(positionsLedger, phash, caller)) {
-            case (null) { 
-                return #err("There are no positions available for this user"); 
-            };
+            case (null) { return #err("There are no positions available for this user") };
             case (?positions) {
                 if (positions.size() == 0) {
                     return #err("There are no positions available for this user");
                 } else {
                     return #ok(positions);
-                }
+                };
             };
         };
     };
 
     public shared query ({ caller }) func getPosition(index : Nat) : async Result<Position, Text> {
-
         switch (Map.get<Principal, [Position]>(positionsLedger, phash, caller)) {
             case (null) { return #err("There are no positions available for this user") };
             case (?positions) {
-                // use getOpt for safe getting position by index
                 let positionsBuffer = Buffer.fromArray<Position>(positions);
                 let position = positionsBuffer.getOpt(index);
                 switch (position) {
-                    case (null) {
-                        return #err("Position does not exist for this index");
-                    };
+                    case (null) { return #err("Position does not exist for this index") };
                     case (?position) { return #ok(position) };
                 };
             };
@@ -139,17 +160,13 @@ actor class DCA() = self {
     };
 
     public shared ({ caller }) func closePosition(index : Nat) : async Result<Text, Text> {
-
         switch (Map.get<Principal, [Position]>(positionsLedger, phash, caller)) {
             case (null) { return #err("There are no positions available for this user") };
             case (?positions) {
-                // use getOpt for safe getting position by index
                 let positionsBuffer = Buffer.fromArray<Position>(positions);
                 let position = positionsBuffer.getOpt(index);
                 switch (position) {
-                    case (null) {
-                        return #err("Position does not exist for this index");
-                    };
+                    case (null) { return #err("Position does not exist for this index") };
                     case (?position) {
                         ignore positionsBuffer.remove(index);
                         let updatedPositions = Buffer.toArray<Position>(positionsBuffer);
@@ -160,26 +177,21 @@ actor class DCA() = self {
                 };
             };
         };
-
     };
 
-    public shared ({ caller }) func  executePurchase(principal : Principal, index : Nat) : async Result<Text, Text> {
-        if (caller != Principal.fromActor(self)){
+    public shared ({ caller }) func executePurchase(principal : Principal, index : Nat) : async Result<Text, Text> {
+        if (caller != Principal.fromActor(self)) {
             return #err("Only DCA canister can execute this method");
         };
         switch (Map.get<Principal, [Position]>(positionsLedger, phash, principal)) {
             case (null) { return #err("There are no positions available for this user") };
             case (?positions) {
-                // use getOpt for safe getting position by index
                 let positionsBuffer = Buffer.fromArray<Position>(positions);
                 let position = positionsBuffer.getOpt(index);
                 switch (position) {
-                    case (null) {
-                        return #err("Position does not exist for this index");
-                    };
+                    case (null) { return #err("Position does not exist for this index") };
                     case (?position) {
-                        // Perform the multi-stage purchase
-                        let purchaseResult = await _performMultiStagePurchase(position);
+                        let purchaseResult = await _performAggregatorPurchase(position);
                         Debug.print("[INFO]: User " # debug_show(principal) # " executed position with result: " # debug_show(purchaseResult));
                         return purchaseResult;
                     };
@@ -187,84 +199,134 @@ actor class DCA() = self {
             };
         };
     };
+    // KongSwap method for perform purchase
+    private func _executeKongSwapPurchase(position : Position) : async Result<Text, Text> {            
+        // Construct proper SwapArgs
+        let swapArgs : SwapArgs = {
+            pay_token = tokenTickerFromPrincipalId(Principal.toText(position.tokenToSell));
+            receive_token = tokenTickerFromPrincipalId(Principal.toText(position.tokenToBuy));
+            pay_amount = position.amountToSell;
+            max_slippage = ?0.01; // 1% slippage
+            receive_amount = null;
+            receive_address = ?Principal.toText(position.beneficiary);
+            referred_by = null;
+            pay_tx_id = null;
+        };
 
-    private func _getBalance0(principal: Principal) : async Nat {
-        let result = await ICPBTCpool.getUserUnusedBalance(principal);
-        switch (result) {
-            case (#ok(record)) {
-                return record.balance0;
+        let swapResult = await kongSwapActor.swap(swapArgs);
+        Debug.print("[INFO]: KongSwap swap result: " # debug_show(swapResult));
+        
+        switch (swapResult) {
+            case (#Ok(value)) {
+                #ok(Nat.toText(value.receive_amount))
             };
-            case (#err(_)) {
-                return 0;
+            case (#Err(error)) {
+                #err("KongSwap swap failed: " # error)
             };
         };
     };
-
-    private func _performMultiStagePurchase(position : Position) : async Result<Text, Text> {
-        // Perform the multi-stage purchase
-        let transferResult = await Ledger.icrc2_transfer_from({
-            to = {
-                owner = Principal.fromActor(self);
-                subaccount = null;
-            };
-            fee = ?10_000;
-            spender_subaccount = null;
-            from = {
-                owner = position.beneficiary;
-                subaccount = null;
-            };
-            memo = null;
-            created_at_time = null;
-            amount = position.amountToSell - 10_000;
-        });
-        switch transferResult {
-            case (#Err(error)) {
-                return #err("Error while transferring ICP to DCA " # debug_show(error));
-            };
-            case (#Ok(value)) {
-                let poolDepositResult = await ICPBTCpool.depositFrom({
-                    fee = 10_000;
-                    token = Principal.toText(position.tokenToSell);
-                    amount = position.amountToSell;
-                });
-                switch poolDepositResult {
-                    case (#err(error)) {
-                        return #err("Error while depositing ICP to pool " # debug_show(error));
+    // ICPSwap method for performing multi-stage purchase
+    private func _executeIcpSwapPurchase(position : Position) : async Result<Text, Text> {
+        let tokenToSell: Text = tokenTickerFromPrincipalId(Principal.toText(position.tokenToSell));
+        let tokenToBuy: Text = tokenTickerFromPrincipalId(Principal.toText(position.tokenToBuy));
+        
+        // Get dynamic swap properties for the token pair
+        let dynamicSwapProperties = DPC.getIcpSwapDynamicSwapProperties(icpSwapPoolMap, tokenToSell, tokenToBuy);
+        
+        switch (dynamicSwapProperties) {
+            case (null) { return #err("[ERROR]: Failed to get swap properties for token pair") };
+            case (?swapProps) {
+                // Transfer tokens from user to DCA canister
+                let transferResult = await swapProps.tokenToSellLedger.icrc2_transfer_from({
+                    to = {
+                        owner = Principal.fromActor(self);
+                        subaccount = null;
                     };
-                    case (#ok(value)) {
-                        let amountOutMinimum = await _getAmountOutMinimum(position.amountToSell);
-                        let swapPoolResult = await ICPBTCpool.swap({
-                            amountIn = Nat.toText(position.amountToSell);
-                            zeroForOne = false;
-                            amountOutMinimum = Int.toText(amountOutMinimum);
+                    fee = ?swapProps.tokenToSellLedgerFee;
+                    spender_subaccount = null;
+                    from = {
+                        owner = position.beneficiary;
+                        subaccount = null;
+                    };
+                    memo = null;
+                    created_at_time = null;
+                    amount = position.amountToSell - swapProps.tokenToSellLedgerFee;
+                });
+                Debug.print("[INFO]: Trying to transfer tokens from Benefetiary to DCA");
+                Debug.print("[INFO]: Token: " # debug_show(position.tokenToSell) # " Amount: " # debug_show(position.amountToSell - swapProps.tokenToSellLedgerFee));
+
+                switch transferResult {
+                    case (#Err(error)) {
+                        return #err("[ERROR]: Error while transferring tokens to DCA " # debug_show(error));
+                    };
+                    case (#Ok(_)) {
+                        // Deposit tokens to pool
+                        let poolDepositResult = await swapProps.dynamicPool.depositFrom({
+                            fee = swapProps.tokenToSellLedgerFee;
+                            token = Principal.toText(position.tokenToSell);
+                            amount = position.amountToSell;
                         });
-                        switch swapPoolResult {
+                        Debug.print("[INFO]: Deposit result: " # debug_show(poolDepositResult));
+                        switch poolDepositResult {
                             case (#err(error)) {
-                                return #err("Error while swaping ICP to ckBTC in ICPSwap " # debug_show(error));
+                                return #err("[ERROR]: Error while depositing tokens to pool " # debug_show(error));
                             };
-                            case (#ok(value)) {
-                                Debug.print("[INFO]: DEX Swap result value: " # debug_show(value));
-                                let balance0Result = await _getBalance0(Principal.fromActor(self));
-                                let withdrawResult = await ICPBTCpool.withdraw({
-                                    amount = balance0Result;
-                                    fee = 10; // Default ckBTC fee
-                                    token = Principal.toText(position.tokenToBuy);
+                            case (#ok(_)) {
+                                let amountOutMinimum = await _getAmountOutMinimum(swapProps.dynamicPool, position.amountToSell);
+                                Debug.print("[INFO]: Amount out minimum: " # debug_show(amountOutMinimum));
+                                let swapPoolResult = await swapProps.dynamicPool.swap({
+                                    amountIn = Nat.toText(position.amountToSell);
+                                    zeroForOne = false;
+                                    amountOutMinimum = Int.toText(amountOutMinimum);
                                 });
-                                switch withdrawResult {
+
+                                switch swapPoolResult {
                                     case (#err(error)) {
-                                        return #err("Error while withdrawing ckBTC from pool " # debug_show(error)) ;
+                                        return #err("[ERROR]: Error while swapping tokens in ICPSwap " # debug_show(error));
                                     };
                                     case (#ok(value)) {
-                                        let previousStepFee = 10; // Default ckBTC fee
-                                        let amountToSend = balance0Result - previousStepFee;
-                                        let sendCkBtcResult = await _sendCkBTC(position.beneficiary, amountToSend, null);
-                                        switch sendCkBtcResult {
+                                        Debug.print("[INFO]: DEX Swap result value: " # debug_show(value));
+                                        let balanceResult = await swapProps.dynamicPool.getUserUnusedBalance(Principal.fromActor(self));
+                                        
+                                        switch (balanceResult) {
                                             case (#err(error)) {
-                                                return #err("Error while transferring ckBTC to beneficiary " # debug_show(error) # "Trying to send: " # Nat.toText(amountToSend));
+                                                return #err("[ERROR]: Error while getting balance " # debug_show(error));
                                             };
-                                            case (#ok(value)) {
-                                                Debug.print("[INFO]: Position successfully executed, ckBTC: " # debug_show(amountToSend));
-                                                return #ok(Nat.toText(amountToSend));
+                                            case (#ok { balance0; balance1 }) {
+                                                Debug.print("[INFO]: Balance0: " # debug_show(balance0) # " Balance1: " # debug_show(balance1));
+                                                let withdrawResult = await swapProps.dynamicPool.withdraw({
+                                                    amount = balance0;
+                                                    fee = swapProps.tokenToBuyLedgerFee;
+                                                    token = Principal.toText(position.tokenToBuy);
+                                                });
+                                                Debug.print("[INFO]: Trying to withdraw tokens from pool");
+                                                switch withdrawResult {
+                                                    case (#err(error)) {
+                                                        return #err("[ERROR]: Error while withdrawing tokens from pool " # debug_show(error));
+                                                    };
+                                                    case (#ok(value)) {
+                                                        Debug.print("[INFO]: Trying to transfer tokens to beneficiary");
+                                                        let amountToSend = balance0 - swapProps.tokenToBuyLedgerFee;
+                                                        let sendResult = await swapProps.tokenToBuyLedger.icrc1_transfer({
+                                                            amount = amountToSend;
+                                                            to = { owner = position.beneficiary; subaccount = null };
+                                                            from_subaccount = null;
+                                                            memo = null;
+                                                            fee = ?swapProps.tokenToBuyLedgerFee;
+                                                            created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
+                                                        });
+
+                                                        switch sendResult {
+                                                            case (#Err(error)) {
+                                                                return #err("[ERROR]: Error while transferring tokens to beneficiary " # debug_show(error));
+                                                            };
+                                                            case (#Ok(value)) {
+                                                                Debug.print("[INFO]: Position successfully executed, amount: " # debug_show(amountToSend));
+                                                                return #ok(Nat.toText(amountToSend));
+                                                            };
+                                                        };
+                                                    };
+                                                };
                                             };
                                         };
                                     };
@@ -277,59 +339,15 @@ actor class DCA() = self {
         };
     };
 
-    private func _principalToBlob(p : Principal) : Blob {
-        var arr : [Nat8] = Blob.toArray(Principal.toBlob(p));
-        var defaultArr : [var Nat8] = Array.init<Nat8>(32, 0);
-        defaultArr[0] := Nat8.fromNat(arr.size());
-        var ind : Nat = 0;
-        while (ind < arr.size() and ind < 32) {
-            defaultArr[ind + 1] := arr[ind];
-            ind := ind + 1;
-        };
-        return Blob.fromArray(Array.freeze(defaultArr));
-    };
-
-
-    public shared func depositToICSwap(amount : Nat) : async Result<Nat, L.TransferError> {
-        let sendIcpToICSwapResult = await _sendIcp(Principal.fromActor(ICPBTCpool), amount, ?_principalToBlob(Principal.fromActor(self)));
-        return sendIcpToICSwapResult;
-    };
-
-    public shared func swapICPtockBTC(amount : Text) : async I.Result {
-        let swapResult = await ICPBTCpool.swap({
-            amountIn = amount;
-            zeroForOne = false;
-            amountOutMinimum = "0";
-        });
-        return swapResult;
-    };
-
-    public shared func applyDepositToDex(amount : Nat, token : Text) : async I.Result {
-        await ICPBTCpool.deposit({
-            amount = amount;
-            fee = 10_000;
-            token = token;
-        });
-    };
-
-    public shared func withdrawFromICPSwap(amount : Nat, token : Text) : async I.Result {
-        await ICPBTCpool.withdraw({
-            amount = amount;
-            fee = 10;
-            token = token;
-        });
-    };
-
-    // only for Development
-
-    private func _getAmountOutMinimum (amountIn: Nat): async Int{
-        let quote = await ICPBTCpool.quote({
+    private func _getAmountOutMinimum(pool: Types.IcpSwapPoolActor, amountIn: Nat): async Int {
+        let quote = await pool.quote({
             amountIn = Nat.toText(amountIn);
             amountOutMinimum = "0";
             zeroForOne = false;
         });
         switch (quote) {
             case (#ok(value)) {
+                Debug.print("[INFO]: Quote result for input amount: " # debug_show(amountIn) # " : " # debug_show(value));
                 let slippage = Float.fromInt(value) * defaultSlippageInPercent / 100.0;
                 return value - Float.toInt(slippage);
             };
@@ -339,89 +357,95 @@ actor class DCA() = self {
         };
     };
 
-    public shared ({ caller }) func withdraw(amount : Nat, address : Principal) : async Result<Nat, L.TransferError> {
-        assert caller == admin;
-        await _sendIcp(address, amount, null);
+    // Timer methods and automation logic flow
+    private func _getTimestampFromFrequency(frequency : Frequency) : Time.Time {
+        switch (frequency) {
+            case (#TenMinutes) { MINUTE * 10 };
+            case (#Daily) { DAY };
+            case (#Weekly) { WEEK };
+            case (#Monthly) { WEEK * 4 };
+        };
     };
 
-    private func _sendIcp(address : Principal, amount : Nat, subaccount : ?Blob) : async Result<Nat, L.TransferError> {
-        Debug.print("Sending ICP to:" # Principal.toText(address));
+    private func _checkAndExecutePositions() : async () {
+        Debug.print("Checking and executing positions");
+        let entries = Map.entries(positionsLedger);
+        let currentTime = Time.now();
 
-        // Transfer from this Canister to an address
-        let icp_reciept = await Ledger.icrc1_transfer({
-            amount = amount;
-            to = { owner = address; subaccount = subaccount };
-            from_subaccount = null;
-            memo = null;
-            fee = ?10_000; // default ICP fee
-            created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-        });
+        for ((user, positionsArray) in entries) {
+            let updatedPositions = Buffer.Buffer<Position>(0);
+            var updatesMade = false;
 
-        switch icp_reciept {
-            case (#Err(error)) {
-                return #err(error);
+            for (positionId in Iter.range(0, positionsArray.size() - 1)) {
+                let position = positionsArray[positionId];
+
+                if (currentTime >= Option.get(position.nextRunTime, 0) and position.purchasesLeft > 0) {
+                    let purchaseResult = await executePurchase(user, positionId);
+                    let newNextRunTime = currentTime + _getTimestampFromFrequency(position.frequency);
+
+                    let updatedHistory = switch (position.purchaseHistory) {
+                        case (?existingHistory) { Array.append(existingHistory, [purchaseResult]) };
+                        case null { [purchaseResult] };
+                    };
+
+                    let newPosition: Position = {
+                        position with
+                        purchasesLeft = position.purchasesLeft - 1;
+                        nextRunTime = ?newNextRunTime;
+                        lastPurchaseResult = ?purchaseResult;
+                        purchaseHistory = ?updatedHistory;
+                    };
+                    updatedPositions.add(newPosition);
+                    updatesMade := true;
+                } else {
+                    updatedPositions.add(position);
+                };
             };
-            case (#Ok(value)) {
-                return #ok(value);
+
+            if (updatesMade) {
+                ignore Map.put<Principal, [Position]>(positionsLedger, phash, user, Buffer.toArray<Position>(updatedPositions));
             };
         };
     };
 
-    private func _sendCkBTC(address : Principal, amount : Nat, subaccount : ?Blob) : async Result<Nat, L.TransferError> {
-        Debug.print("Sending ckBTC to:" # Principal.toText(address));
-
-        // Transfer from this Canister to an address
-        let ckBtcReciept = await ckBtcLedger.icrc1_transfer({
-            amount = amount;
-            to = { owner = address; subaccount = subaccount };
-            from_subaccount = null;
-            memo = null;
-            fee = ?10; // default ckBTC fee
-            created_at_time = ?Nat64.fromNat(Int.abs(Time.now()));
-        });
-
-        switch ckBtcReciept {
-            case (#Err(error)) {
-                return #err(error);
+    public shared ({ caller }) func editTimer(timerId: Nat, actionType: TimerActionType) : async Result<Text, Text> {
+        if (caller != admin) {
+            return #err("Only worker can execute this method");
+        };
+        switch (actionType) {
+            case (#StartTimer) {
+                let timerId = await _startScheduler();
+                Debug.print("Timer: " # debug_show(timerId) # " created");
+                globalTimerId := timerId;
+                return #ok(Nat.toText(timerId));
             };
-            case (#Ok(value)) {
-                return #ok(value);
+            case (#StopTimer) {
+                Timer.cancelTimer(timerId);
+                Debug.print("Timer: " # debug_show(timerId) # " was deleted");
+                return #ok("0");
             };
         };
+    };
+
+    private func _startScheduler() : async Nat {
+        Timer.recurringTimer<system>(((#nanoseconds (MINUTE * 3)), _checkAndExecutePositions));
+    };
+
+    // Initialize pool configurations and restart timers after canister upgrade
+    system func postupgrade() {
+        initPoolConfigs();
+        let timerId = Timer.recurringTimer<system>(((#nanoseconds (MINUTE * 3)), _checkAndExecutePositions));
+        globalTimerId := timerId;
+        Debug.print("Postupgrade Timer started: " # debug_show(timerId));
     };
 
     // only for Admin
-    public shared ({ caller }) func approve(amount : Nat, to : Principal) : async Result<Nat, L.ApproveError> {
-        assert caller == admin;
-        await _setApprove(amount, to);
-    };
 
-    public shared ({ caller }) func getGlobalTimerId() : async Nat {
-        assert caller == admin;
-        globalTimerId;
-    };
+    private func _setPoolApprove(ledgerPrincipal: Principal, ammountToSell : Nat, to : Principal) : async Result<Nat, L.ApproveError> {
 
-    public func getWorker() : async ?Principal {
-        actualWorker;
-    };
+        let ledgerActor = actor (Principal.toText(ledgerPrincipal)): Types.Ledger;
 
-    public shared ({ caller }) func getDCAUnusedBalance(principal: Principal) : async Result<Text, Text> {
-        assert caller == admin;
-        let result = await ICPBTCpool.getUserUnusedBalance(principal);
-        switch (result) {
-            case (#ok {balance0; balance1}) {
-                return #ok("ckBTC: " #Nat.toText(balance0) # " ICP: " #Nat.toText(balance1));
-            };
-            case (#err(_)) {
-                return #err("Error while getting balance");
-            };
-        };
-    };
-
-
-    private func _setApprove(ammountToSell : Nat, to : Principal) : async Result<Nat, L.ApproveError> {
-
-        let approve = await Ledger.icrc2_approve({
+        let approve = await ledgerActor.icrc2_approve({
             amount = ammountToSell;
             created_at_time = null;
             expected_allowance = null;
@@ -444,105 +468,153 @@ actor class DCA() = self {
         };
     };
 
-    // Timers methods and automation logic flow
-
-    private func _getTimestampFromFrequency(frequency : Frequency) : Time.Time {
-        switch (frequency) {
-            case (#TenMinutes) {
-                MINUTE * 10;
-            };
-            case (#Daily) {
-                DAY;
-            };
-            case (#Weekly) {
-                WEEK;
-            };
-            case (#Monthly) {
-                WEEK * 4;
-            };
-        };
+    public shared ({ caller }) func approve(ledgetPrincipal: Principal, amount : Nat, to : Principal) : async Result<Nat, L.ApproveError> {
+        assert caller == admin;
+        await _setPoolApprove(ledgetPrincipal, amount, to);
     };
 
-    private func _checkAndExecutePositions() : async () {
-        Debug.print("Checking and executing positions");
-        let entries = Map.entries(positionsLedger);
-        let currentTime = Time.now();
-
-        // Iterate over all users
-        for ((user, positionsArray) in entries) {
-            let updatedPositions: Buffer.Buffer<Position> = Buffer.Buffer<Position>(0);
-            var updatesMade: Bool = false;
-
-            // Iterate over all positions
-            for (positionId in Iter.range(0, positionsArray.size() - 1)) {
-                let position: Position = positionsArray[positionId];
-
-                if (currentTime >= Option.get(position.nextRunTime, 0) and position.purchasesLeft > 0) {
-                    // Call executePurchase with the correct positionId
-                    let purchaseResult = await executePurchase(user, positionId);
-                    let newNextRunTime = currentTime + _getTimestampFromFrequency(position.frequency);
-
-                    let updatedHistory: [Result<Text, Text>] = switch (position.purchaseHistory) {
-                        // If history exists, append the new result
-                        case (?existingHistory) {
-                            Array.append(existingHistory, [purchaseResult]);
-                        };
-                        // If history does not exist, create a new one
-                        case null {
-                            [purchaseResult];
-                        };
-                    };
-
-                    // Create a new position state
-                    let newPosition: Position = {
-                        position with
-                        purchasesLeft = position.purchasesLeft - 1;
-                        nextRunTime = ?newNextRunTime;
-                        lastPurchaseResult = ?purchaseResult;
-                        purchaseHistory = ?updatedHistory;
-                    };
-                    updatedPositions.add(newPosition);
-                    updatesMade := true;
-                } else {
-                    // If no purchase was made, keep the position as is
-                    updatedPositions.add(position);
-                    };
-            };
-
-            // If any updates were made, convert Buffer back to Array and update the map
-            if (updatesMade) {
-                ignore Map.put<Principal, [Position]>(positionsLedger, phash, user, Buffer.toArray<Position>(updatedPositions));
-            };
-        };
-    };
-
-    public shared ({ caller }) func editTimer(timerId: Nat, actionType: TimerActionType) : async Result<Text, Text> {
+    // Method to view all pool configurations
+    public shared query ({ caller }) func getAllPools() : async Result<[(Text, IcpSwapPoolProperties)], Text> {
         if (caller != admin) {
-            return #err("Only worker can execute this method"); 
+            return #err("Only admin can view pool configurations");
         };
-        switch (actionType) {
-            case (#StartTimer) {
-                let timerId = await _startScheduler();
-                Debug.print("Timer: " # debug_show(timerId) # " created");
-                globalTimerId := timerId;
-                return #ok(Nat.toText(timerId));
+
+        let entries = Map.entries(icpSwapPoolMap);
+        let result = Buffer.Buffer<(Text, IcpSwapPoolProperties)>(0);
+
+        for ((key, properties) in entries) {
+            result.add((key, properties));
+        };
+
+        Debug.print("[INFO]: Admin requested pool configurations");
+        #ok(Buffer.toArray(result));
+    };
+
+    public shared func getQuotes(tokenToSell: Text, tokenToBuy: Text, amount: Nat, _slippage: Float) : async Result<[QuoteResponse], Error> {
+        var quotes = Buffer.Buffer<QuoteResponse>(0);
+
+        // Try to get ICP Swap quote
+        switch (DPC.getIcpSwapDynamicSwapProperties(icpSwapPoolMap, tokenToSell, tokenToBuy)) {
+            case (?icpSwapProperties) {
+                Debug.print("ICPSwap:pool for pair created");
+                try {
+                    let icpSwapPoolActor = icpSwapProperties.dynamicPool;
+                    let icpSwapQuoteResult = await icpSwapPoolActor.quote({
+                        amountIn = Nat.toText(amount);
+                        zeroForOne = false;
+                        amountOutMinimum = "0";
+                    });
+
+                    switch (icpSwapQuoteResult) {
+                        case (#ok(quoteValue)) {
+                            Debug.print("ICPSwap: Quote value: " # debug_show(quoteValue));
+                            quotes.add({
+                                dexName = "ICPSwap";
+                                inputAmount = amount;
+                                outputAmount = quoteValue;
+                            });
+                        };
+                        case (#err(error)) {
+                            Debug.print("[ERROR] ICPSwap quote failed: " # debug_show(error));
+                            // Continue to next DEX even if this one fails
+                        };
+                    };
+                } catch (e) {
+                    Debug.print("[ERROR] ICPSwap quote error: " # Error.message(e));
+                    // Continue to next DEX even if this one fails
+                };
             };
-            case (#StopTimer) {
-                Timer.cancelTimer(timerId);
-                Debug.print("Timer: " # debug_show(timerId) # " was deleted");
-                return #ok("0");
+            case (null) {
+                Debug.print("[INFO] No ICPSwap pool found for " # tokenToSell # " -> " # tokenToBuy);
+                // Continue to next DEX if no pool found
+            };
+        };
+
+        // Try to get KongSwap quote
+        try {
+            let kongSwapQuoteResult = await kongSwapActor.swap_amounts(
+                tokenToSell,
+                amount,
+                tokenToBuy
+            );
+
+            switch (kongSwapQuoteResult) {
+                case (#Ok(quoteResult)) {
+                    Debug.print("KongSwap: Quote value: " # debug_show(quoteResult));
+                    quotes.add({
+                        dexName = "KongSwap";
+                        inputAmount = amount;
+                        outputAmount = quoteResult.receive_amount;
+                    });
+                };
+                case (#Err(error)) {
+                    Debug.print("[ERROR] KongSwap quote failed: " # error);
+                    // Continue even if this DEX fails
+                };
+            };
+        } catch (e) {
+            Debug.print("[ERROR] KongSwap quote error: " # Error.message(e));
+            // Continue even if this DEX fails
+        };
+
+        // Return error if no quotes were obtained
+        if (quotes.size() == 0) {
+            #err(#QuoteFailed("No quotes available from any DEX"));
+        }
+        else {
+            #ok(Buffer.toArray(quotes));
+        };
+    };
+
+
+    public shared func getBestQuote(tokenToSell: Text, tokenToBuy: Text, amount: Nat, slippage: Float) : async Result<QuoteResponse, Error> {
+        let quotesResult = await getQuotes(tokenToSell, tokenToBuy, amount, slippage);
+        
+        switch (quotesResult) {
+            case (#err(e)) { #err(e) };
+            case (#ok(quotes)) {
+                if (quotes.size() == 0) {
+                    return #err(#QuoteFailed("No quotes available"));
+                };
+
+                var bestQuote = quotes[0];
+                for (quote in quotes.vals()) {
+                    if (quote.outputAmount > bestQuote.outputAmount) {
+                        bestQuote := quote;
+                    };
+                };
+                #ok(bestQuote)
             };
         };
     };
 
-    private func _startScheduler() : async Nat {
-        Timer.recurringTimer<system>(((#nanoseconds (MINUTE * 3)), _checkAndExecutePositions));
-    };
+    private func _performAggregatorPurchase(position : Position) : async Result<Text, Text> {
 
-    // In order to restart timers after the canister upgrade
-    system func postupgrade() {
-        let timerId = Timer.recurringTimer<system>(((#nanoseconds (MINUTE * 3)), _checkAndExecutePositions));
-        globalTimerId := timerId;
-        Debug.print("Postupgrade Timer started: " # debug_show(timerId));
+        let bestQuoteResult = await getBestQuote(
+            tokenTickerFromPrincipalId(Principal.toText(position.tokenToSell)),
+            tokenTickerFromPrincipalId(Principal.toText(position.tokenToBuy)), 
+            position.amountToSell,
+            0.0
+        );
+
+        switch(bestQuoteResult) {
+            case (#err(e)) { return #err(debug_show(e)) };
+            case (#ok(bestQuote)) {
+
+                switch(bestQuote.dexName) {
+                    case ("ICPSwap") {
+                        Debug.print("[INFO]: ICPSwap was selected as best quote provider");
+                        return await _executeIcpSwapPurchase(position);
+                    };
+                    case ("KongSwap") {
+                        Debug.print("[INFO]: KongSwap was selected as best quote provider");
+                        return await _executeKongSwapPurchase(position);
+                    };
+                    case (_) {
+                        return #err("Unknown DEX");
+                    };
+                };
+            };
+        };
     };
 };
