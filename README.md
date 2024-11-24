@@ -124,7 +124,7 @@ Our achievements and future goals.
 - [x] Internet Identity integrated
 - [ ] Plug wallet integrated
 - [ ] ckUSDT, ckUSDC, ckETH, CHAT integrated 
-- [ ] Aggregator router integrated
+- [x] Aggregator router integrated
 
 ## License
 This project is licensed under the MIT license, see LICENSE.md for details.
